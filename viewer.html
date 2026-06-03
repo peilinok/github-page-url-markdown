@@ -146,11 +146,111 @@
         background: var(--panel-strong);
       }
 
+      .viewer-layout.has-explorer {
+        display: grid;
+        grid-template-columns: minmax(0, 250px) minmax(0, 1fr);
+        gap: 24px;
+        align-items: start;
+      }
+
+      .explorer {
+        position: sticky;
+        top: 18px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(247, 244, 237, 0.95);
+      }
+
+      .explorer h2 {
+        margin: 0 0 12px;
+        font-size: 0.95rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .explorer-meta {
+        margin: 0 0 14px;
+        color: var(--muted);
+        line-height: 1.45;
+        font-size: 0.92rem;
+      }
+
+      .explorer-meta a {
+        color: var(--accent-strong);
+      }
+
+      .explorer-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+
+      .explorer-item {
+        margin: 0;
+      }
+
+      .explorer-link {
+        width: 100%;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--text);
+        text-align: left;
+        min-height: 0;
+      }
+
+      .explorer-link:hover {
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      .explorer-link.is-active {
+        border-color: rgba(13, 107, 95, 0.35);
+        background: rgba(13, 107, 95, 0.1);
+      }
+
+      .explorer-kind {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(13, 107, 95, 0.12);
+        color: var(--accent-strong);
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+
+      .explorer-label {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .explorer-empty {
+        padding: 10px 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
       .preview-layout {
         display: grid;
         grid-template-columns: minmax(0, 230px) minmax(0, 1fr);
         gap: 24px;
         align-items: start;
+      }
+
+      .preview-layout.no-toc {
+        grid-template-columns: 1fr;
       }
 
       .toc {
@@ -319,6 +419,14 @@
         .toc {
           position: static;
         }
+
+        .viewer-layout.has-explorer {
+          grid-template-columns: 1fr;
+        }
+
+        .explorer {
+          position: static;
+        }
       }
     </style>
   </head>
@@ -361,6 +469,8 @@
       const statusBox = document.getElementById("status");
       const errorBox = document.getElementById("error");
       const preview = document.getElementById("preview");
+      const GITHUB_API_BASE = "https://api.github.com";
+      const MARKDOWN_FILE_PATTERN = /\.(md|markdown|mdown|mkdn)$/i;
       let currentTocItems = [];
       let headingSlugCounts = new Map();
       let vizInstancePromise = null;
@@ -429,10 +539,150 @@
           .join("");
       }
 
-      function renderPreviewShell(bodyHtml, tocItems) {
+      function isMarkdownFileName(name) {
+        return MARKDOWN_FILE_PATTERN.test(String(name || ""));
+      }
+
+      function buildGitHubApiUrl(owner, repo, path, ref) {
+        const encodedOwner = encodeURIComponent(owner);
+        const encodedRepo = encodeURIComponent(repo);
+        const encodedPath = path
+          ? "/" +
+            path
+              .split("/")
+              .filter(Boolean)
+              .map((segment) => encodeURIComponent(segment))
+              .join("/")
+          : "";
+
+        return (
+          GITHUB_API_BASE +
+          "/repos/" +
+          encodedOwner +
+          "/" +
+          encodedRepo +
+          "/contents" +
+          encodedPath +
+          "?ref=" +
+          encodeURIComponent(ref)
+        );
+      }
+
+      function buildGitHubTreeUrl(owner, repo, ref, path) {
+        const segments = [owner, repo, "tree"]
+          .concat(String(ref).split("/").map((segment) => encodeURIComponent(segment)));
+
+        if (path) {
+          segments.push.apply(
+            segments,
+            String(path)
+              .split("/")
+              .filter(Boolean)
+              .map((segment) => encodeURIComponent(segment))
+          );
+        }
+
+        return "https://github.com/" + segments.join("/");
+      }
+
+      function buildGitHubBlobUrl(owner, repo, ref, path) {
+        const segments = [owner, repo, "blob"]
+          .concat(String(ref).split("/").map((segment) => encodeURIComponent(segment)))
+          .concat(
+            String(path)
+              .split("/")
+              .filter(Boolean)
+              .map((segment) => encodeURIComponent(segment))
+          );
+
+        return "https://github.com/" + segments.join("/");
+      }
+
+      function sortGitHubEntries(entries) {
+        return entries.slice().sort((left, right) => {
+          if (left.type === right.type) {
+            return left.name.localeCompare(right.name);
+          }
+
+          if (left.type === "dir") {
+            return -1;
+          }
+
+          if (right.type === "dir") {
+            return 1;
+          }
+
+          return left.name.localeCompare(right.name);
+        });
+      }
+
+      function buildExplorerHtml(context) {
+        if (!context) {
+          return "";
+        }
+
+        const itemsHtml = context.entries.length
+          ? context.entries
+              .map((entry) => {
+                const kind = entry.type === "dir" ? "Dir" : isMarkdownFileName(entry.name) ? "MD" : "File";
+                const activeClass = context.selectedPath === entry.path ? " is-active" : "";
+                const label = entry.type === "dir" ? entry.name + "/" : entry.name;
+
+                return (
+                  '<li class="explorer-item">' +
+                  '<button type="button" class="explorer-link' +
+                  activeClass +
+                  '" data-entry-type="' +
+                  escapeAttribute(entry.type) +
+                  '" data-entry-path="' +
+                  escapeAttribute(entry.path) +
+                  '">' +
+                  '<span class="explorer-kind">' +
+                  escapeAttribute(kind) +
+                  "</span>" +
+                  '<span class="explorer-label">' +
+                  escapeAttribute(label) +
+                  "</span>" +
+                  "</button>" +
+                  "</li>"
+                );
+              })
+              .join("")
+          : '<li class="explorer-empty">This directory is empty.</li>';
+
+        return (
+          '<aside class="explorer">' +
+          "<h2>Repository</h2>" +
+          '<p class="explorer-meta">' +
+          '<a href="' +
+          escapeAttribute(buildGitHubTreeUrl(context.owner, context.repo, context.ref, context.directoryPath)) +
+          '" target="_blank" rel="noreferrer noopener">' +
+          escapeAttribute(context.owner + "/" + context.repo) +
+          "</a><br />" +
+          "branch: " +
+          escapeAttribute(context.ref) +
+          "<br />" +
+          "path: " +
+          escapeAttribute("/" + (context.directoryPath || "")) +
+          "</p>" +
+          '<ol class="explorer-list">' +
+          itemsHtml +
+          "</ol>" +
+          "</aside>"
+        );
+      }
+
+      function renderPreviewShell(bodyHtml, tocItems, explorerContext) {
         const tocHtml = buildTocHtml(tocItems);
+        const explorerHtml = buildExplorerHtml(explorerContext);
         preview.innerHTML =
-          '<div class="preview-layout">' +
+          '<div class="viewer-layout' +
+          (explorerContext ? " has-explorer" : "") +
+          '">' +
+          explorerHtml +
+          '<div class="preview-layout' +
+          (tocItems.length ? "" : " no-toc") +
+          '">' +
           '<aside class="toc' +
           (tocItems.length ? "" : " is-empty") +
           '">' +
@@ -444,7 +694,315 @@
           '<div class="preview-body">' +
           bodyHtml +
           "</div>" +
+          "</div>" +
           "</div>";
+      }
+
+      function syncUrlState(url, options) {
+        const next = new URL(window.location.href);
+        next.searchParams.set("url", url);
+
+        if (options && options.entry) {
+          next.searchParams.set("entry", options.entry);
+        } else {
+          next.searchParams.delete("entry");
+        }
+
+        window.history.replaceState({}, "", next);
+      }
+
+      function decodeBase64Utf8(base64Value) {
+        const cleaned = String(base64Value || "").replace(/\n/g, "");
+        const binary = atob(cleaned);
+        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+        return new TextDecoder().decode(bytes);
+      }
+
+      async function fetchJson(url, allowNotFound) {
+        const response = await fetch(url, {
+          headers: {
+            Accept: "application/vnd.github+json"
+          }
+        });
+
+        if (allowNotFound && response.status === 404) {
+          return null;
+        }
+
+        if (!response.ok) {
+          let message = "HTTP " + response.status + " " + response.statusText;
+
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.message) {
+              message += ": " + errorData.message;
+            }
+          } catch (_error) {
+            // Ignore JSON parsing errors for error bodies.
+          }
+
+          throw new Error(message);
+        }
+
+        return response.json();
+      }
+
+      function parseGitHubUrl(sourceUrl) {
+        try {
+          const parsed = new URL(sourceUrl);
+          if (parsed.hostname !== "github.com" && parsed.hostname !== "www.github.com") {
+            return null;
+          }
+
+          const segments = parsed.pathname.split("/").filter(Boolean).map((segment) => decodeURIComponent(segment));
+          if (segments.length < 4) {
+            return null;
+          }
+
+          const owner = segments[0];
+          const repo = segments[1];
+          const mode = segments[2];
+          if (mode !== "tree" && mode !== "blob") {
+            return null;
+          }
+
+          return {
+            owner: owner,
+            repo: repo,
+            mode: mode,
+            remainder: segments.slice(3)
+          };
+        } catch (_error) {
+          return null;
+        }
+      }
+
+      async function resolveGitHubRefAndPath(owner, repo, mode, remainder) {
+        let lastError = null;
+
+        for (let index = remainder.length; index >= 1; index -= 1) {
+          const ref = remainder.slice(0, index).join("/");
+          const path = remainder.slice(index).join("/");
+
+          if (mode === "blob" && !path) {
+            continue;
+          }
+
+          const apiUrl = buildGitHubApiUrl(owner, repo, path, ref);
+
+          try {
+            const payload = await fetchJson(apiUrl, true);
+            if (!payload) {
+              continue;
+            }
+
+            if (mode === "tree" && Array.isArray(payload)) {
+              return {
+                ref: ref,
+                path: path,
+                payload: payload
+              };
+            }
+
+            if (mode === "blob" && !Array.isArray(payload) && payload.type === "file") {
+              return {
+                ref: ref,
+                path: path,
+                payload: payload
+              };
+            }
+          } catch (error) {
+            lastError = error;
+          }
+        }
+
+        throw lastError || new Error("Unable to resolve the GitHub branch and path from this URL.");
+      }
+
+      async function fetchGitHubDirectory(owner, repo, ref, path) {
+        const payload = await fetchJson(buildGitHubApiUrl(owner, repo, path, ref));
+        if (!Array.isArray(payload)) {
+          throw new Error("The GitHub API did not return a directory listing for this path.");
+        }
+        return sortGitHubEntries(payload);
+      }
+
+      async function fetchGitHubFile(owner, repo, ref, path) {
+        const payload = await fetchJson(buildGitHubApiUrl(owner, repo, path, ref));
+        if (Array.isArray(payload) || payload.type !== "file") {
+          throw new Error("The requested GitHub path is not a file.");
+        }
+        return payload;
+      }
+
+      async function readGitHubFileText(fileData) {
+        if (fileData.content && fileData.encoding === "base64") {
+          return decodeBase64Utf8(fileData.content);
+        }
+
+        if (fileData.download_url) {
+          const response = await fetch(fileData.download_url, {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit"
+          });
+
+          if (!response.ok) {
+            throw new Error("HTTP " + response.status + " " + response.statusText);
+          }
+
+          return response.text();
+        }
+
+        throw new Error("This GitHub file could not be read as Markdown text.");
+      }
+
+      function pickDefaultGitHubFile(entries) {
+        const preferredNames = ["README.md", "README.markdown", "README.mdown", "README.mkdn", "SKILL.md", "index.md"];
+
+        for (const name of preferredNames) {
+          const match = entries.find((entry) => entry.type === "file" && entry.name.toLowerCase() === name.toLowerCase());
+          if (match) {
+            return match;
+          }
+        }
+
+        return entries.find((entry) => entry.type === "file" && isMarkdownFileName(entry.name)) || null;
+      }
+
+      async function renderMarkdownContent(markdown, sourceUrl, explorerContext) {
+        window.__markdownSourceUrl = sourceUrl;
+        currentTocItems = [];
+        headingSlugCounts = new Map();
+        const html = marked.parse(markdown, { renderer });
+        const safeHtml = DOMPurify.sanitize(html);
+
+        renderPreviewShell('<div class="markdown-body">' + safeHtml + "</div>", currentTocItems, explorerContext);
+        await renderGraphvizBlocks(preview);
+        wireExplorerInteractions(explorerContext);
+      }
+
+      function renderExplorerNotice(message, explorerContext) {
+        renderPreviewShell(
+          '<div class="markdown-body"><p class="placeholder">' + escapeAttribute(message) + "</p></div>",
+          [],
+          explorerContext
+        );
+        wireExplorerInteractions(explorerContext);
+      }
+
+      function wireExplorerInteractions(explorerContext) {
+        if (!explorerContext) {
+          return;
+        }
+
+        const links = preview.querySelectorAll(".explorer-link");
+        links.forEach((link) => {
+          link.addEventListener("click", async () => {
+            const entryType = link.getAttribute("data-entry-type");
+            const entryPath = link.getAttribute("data-entry-path") || "";
+
+            if (entryType === "dir") {
+              await loadGitHubDirectoryView({
+                owner: explorerContext.owner,
+                repo: explorerContext.repo,
+                ref: explorerContext.ref,
+                directoryPath: entryPath
+              });
+              return;
+            }
+
+            if (isMarkdownFileName(entryPath)) {
+              await loadGitHubDirectoryView({
+                owner: explorerContext.owner,
+                repo: explorerContext.repo,
+                ref: explorerContext.ref,
+                directoryPath: explorerContext.directoryPath,
+                entries: explorerContext.entries,
+                selectedPath: entryPath
+              });
+              return;
+            }
+
+            const nextContext = {
+              owner: explorerContext.owner,
+              repo: explorerContext.repo,
+              ref: explorerContext.ref,
+              directoryPath: explorerContext.directoryPath,
+              directoryUrl: explorerContext.directoryUrl,
+              entries: explorerContext.entries,
+              selectedPath: entryPath
+            };
+
+            renderExplorerNotice("This file is not Markdown: " + entryPath, nextContext);
+            setStatus("Browsing GitHub directory: " + explorerContext.owner + "/" + explorerContext.repo);
+            syncUrlState(explorerContext.directoryUrl, { entry: entryPath });
+          });
+        });
+      }
+
+      async function loadGitHubDirectoryView(options) {
+        const directoryPath = options.directoryPath || "";
+        const entries = options.entries || (await fetchGitHubDirectory(options.owner, options.repo, options.ref, directoryPath));
+        const directoryUrl = buildGitHubTreeUrl(options.owner, options.repo, options.ref, directoryPath);
+        const requestedEntry = options.selectedPath || "";
+        const selectedEntry =
+          entries.find((entry) => entry.path === requestedEntry) ||
+          pickDefaultGitHubFile(entries);
+
+        const explorerContext = {
+          owner: options.owner,
+          repo: options.repo,
+          ref: options.ref,
+          directoryPath: directoryPath,
+          directoryUrl: directoryUrl,
+          entries: entries,
+          selectedPath: selectedEntry ? selectedEntry.path : requestedEntry || null
+        };
+
+        if (selectedEntry && selectedEntry.type === "file" && isMarkdownFileName(selectedEntry.name)) {
+          const file = await fetchGitHubFile(options.owner, options.repo, options.ref, selectedEntry.path);
+          const markdown = await readGitHubFileText(file);
+          await renderMarkdownContent(markdown, file.download_url || buildGitHubBlobUrl(options.owner, options.repo, options.ref, selectedEntry.path), explorerContext);
+          setStatus("Rendered GitHub Markdown: " + selectedEntry.path);
+          syncUrlState(directoryUrl, { entry: selectedEntry.path });
+          return;
+        }
+
+        renderExplorerNotice("Select a Markdown file from this GitHub directory.", explorerContext);
+        setStatus("Browsing GitHub directory: " + options.owner + "/" + options.repo);
+        syncUrlState(directoryUrl);
+      }
+
+      async function loadGitHubBlobView(sourceUrl) {
+        const parsed = parseGitHubUrl(sourceUrl);
+        const resolved = await resolveGitHubRefAndPath(parsed.owner, parsed.repo, parsed.mode, parsed.remainder);
+        const directoryPath = resolved.path.split("/").slice(0, -1).join("/");
+        const entries = await fetchGitHubDirectory(parsed.owner, parsed.repo, resolved.ref, directoryPath);
+
+        await loadGitHubDirectoryView({
+          owner: parsed.owner,
+          repo: parsed.repo,
+          ref: resolved.ref,
+          directoryPath: directoryPath,
+          entries: entries,
+          selectedPath: resolved.path
+        });
+      }
+
+      async function loadGitHubTreeView(sourceUrl) {
+        const parsed = parseGitHubUrl(sourceUrl);
+        const resolved = await resolveGitHubRefAndPath(parsed.owner, parsed.repo, parsed.mode, parsed.remainder);
+        const selectedEntryFromQuery = new URL(window.location.href).searchParams.get("entry");
+
+        await loadGitHubDirectoryView({
+          owner: parsed.owner,
+          repo: parsed.repo,
+          ref: resolved.ref,
+          directoryPath: resolved.path,
+          entries: resolved.payload,
+          selectedPath: selectedEntryFromQuery
+        });
       }
 
       async function getVizInstance() {
@@ -562,18 +1120,24 @@
         preview.appendChild(paragraph);
       }
 
-      function syncUrlQuery(url) {
-        const next = new URL(window.location.href);
-        next.searchParams.set("url", url);
-        window.history.replaceState({}, "", next);
-      }
-
-      async function loadMarkdown(sourceUrl) {
+      async function loadSource(sourceUrl) {
         clearError();
-        setStatus("Fetching remote Markdown...");
+        setStatus("Loading source...");
         setPlaceholder("Loading preview...");
 
         try {
+          const githubUrl = parseGitHubUrl(sourceUrl);
+
+          if (githubUrl && githubUrl.mode === "tree") {
+            await loadGitHubTreeView(sourceUrl);
+            return;
+          }
+
+          if (githubUrl && githubUrl.mode === "blob") {
+            await loadGitHubBlobView(sourceUrl);
+            return;
+          }
+
           const response = await fetch(sourceUrl, {
             method: "GET",
             mode: "cors",
@@ -585,16 +1149,9 @@
           }
 
           const markdown = await response.text();
-          window.__markdownSourceUrl = sourceUrl;
-          currentTocItems = [];
-          headingSlugCounts = new Map();
-          const html = marked.parse(markdown, { renderer });
-          const safeHtml = DOMPurify.sanitize(html);
-
-          renderPreviewShell('<div class="markdown-body">' + safeHtml + "</div>", currentTocItems);
-          await renderGraphvizBlocks(preview);
+          await renderMarkdownContent(markdown, sourceUrl, null);
           setStatus("Rendered successfully: " + sourceUrl);
-          syncUrlQuery(sourceUrl);
+          syncUrlState(sourceUrl);
         } catch (error) {
           const detail =
             "Failed to load: " +
@@ -602,7 +1159,8 @@
             "\n\nPossible reasons:\n" +
             "1. The target URL does not allow CORS requests\n" +
             "2. The target content is not publicly accessible\n" +
-            "3. There is a network or TLS issue\n\n" +
+            "3. The GitHub API rate limit or URL structure prevented directory lookup\n" +
+            "4. There is a network or TLS issue\n\n" +
             "Browser error: " +
             (error && error.message ? error.message : String(error));
 
@@ -623,14 +1181,14 @@
           return;
         }
 
-        await loadMarkdown(url);
+        await loadSource(url);
       });
 
       const params = new URLSearchParams(window.location.search);
       const initialUrl = params.get("url");
       if (initialUrl) {
         input.value = initialUrl;
-        loadMarkdown(initialUrl);
+        loadSource(initialUrl);
       }
     </script>
   </body>
