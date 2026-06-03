@@ -7,17 +7,25 @@
     <style>
       :root {
         color-scheme: light;
-        --bg: #f4f0e8;
-        --panel: rgba(255, 251, 245, 0.92);
-        --panel-strong: #fffaf2;
-        --text: #1f1a17;
-        --muted: #675f58;
-        --accent: #0d6b5f;
-        --accent-strong: #094e45;
-        --border: rgba(31, 26, 23, 0.12);
-        --error-bg: #fff1eb;
-        --error-text: #8a3318;
-        --shadow: 0 20px 50px rgba(40, 30, 20, 0.12);
+        --bg: #ffffff;
+        --panel: #ffffff;
+        --panel-strong: #fafafa;
+        --panel-muted: #f5f5f5;
+        --text: #111111;
+        --muted: #5f5f5f;
+        --accent: #111111;
+        --accent-strong: #000000;
+        --accent-soft: #efefef;
+        --border: #e3e3e3;
+        --error-bg: #fff7f5;
+        --error-text: #9a3412;
+        --shadow: 0 12px 32px rgba(0, 0, 0, 0.04);
+        --ui-font: "Aptos", "Segoe UI", sans-serif;
+        --reading-font: "Iowan Old Style", Georgia, "Times New Roman", serif;
+      }
+
+      html {
+        height: 100%;
       }
 
       * {
@@ -27,162 +35,293 @@
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: Georgia, "Times New Roman", serif;
+        font-family: var(--ui-font);
         color: var(--text);
-        background:
-          radial-gradient(circle at top left, rgba(13, 107, 95, 0.14), transparent 34%),
-          radial-gradient(circle at top right, rgba(177, 112, 51, 0.12), transparent 28%),
-          linear-gradient(180deg, #f7f4ed 0%, var(--bg) 100%);
+        background: var(--bg);
+      }
+
+      a {
+        color: var(--accent-strong);
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        padding: 0;
+        border: 0;
+        color: inherit;
+        background: none;
+        cursor: pointer;
       }
 
       .shell {
-        width: min(980px, calc(100% - 32px));
-        margin: 32px auto;
-        padding: 24px;
-        border: 1px solid var(--border);
-        border-radius: 24px;
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto auto auto minmax(0, 1fr);
+        background: var(--bg);
+      }
+
+      .app-toolbar {
+        display: grid;
+        grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+        gap: 24px;
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid var(--border);
         background: var(--panel);
-        box-shadow: var(--shadow);
-        backdrop-filter: blur(14px);
+      }
+
+      .app-toolbar__brand,
+      .app-toolbar__controls {
+        display: grid;
+        gap: 12px;
+        align-content: start;
       }
 
       h1 {
-        margin: 0 0 8px;
-        font-size: clamp(2rem, 3vw, 2.8rem);
-        line-height: 1.02;
-        letter-spacing: -0.03em;
+        margin: 0;
+        font-family: var(--reading-font);
+        font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+        line-height: 1;
+        letter-spacing: -0.04em;
       }
 
       .intro {
-        margin: 0 0 20px;
+        margin: 0;
         color: var(--muted);
-        font-size: 1rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        max-width: 34ch;
       }
 
       .form {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: 12px;
-        align-items: stretch;
-        margin-bottom: 12px;
+        align-items: center;
       }
 
       input[type="url"] {
         width: 100%;
         padding: 14px 16px;
         border: 1px solid var(--border);
-        border-radius: 14px;
-        font: inherit;
-        font-size: 1rem;
+        border-radius: 12px;
         color: var(--text);
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--panel);
+        min-height: 48px;
+      }
+
+      input[type="url"]::placeholder {
+        color: #8b8b8b;
       }
 
       input[type="url"]:focus {
-        outline: 2px solid rgba(13, 107, 95, 0.18);
-        border-color: rgba(13, 107, 95, 0.45);
+        outline: none;
+        border-color: #222222;
+        box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
       }
 
-      button {
-        border: 0;
-        border-radius: 14px;
+      .primary-button {
+        min-height: 48px;
         padding: 0 18px;
-        min-height: 52px;
-        font: inherit;
+        border: 1px solid #111111;
+        border-radius: 12px;
         font-weight: 600;
-        color: #fff9f1;
-        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
-        cursor: pointer;
+        color: #ffffff;
+        background: #111111;
       }
 
-      button:hover {
-        filter: brightness(1.02);
+      .primary-button:hover {
+        background: #000000;
       }
 
       .meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px 16px;
-        margin-bottom: 18px;
+        gap: 8px;
         color: var(--muted);
-        font-size: 0.95rem;
       }
 
       .chip {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 12px;
+        padding: 7px 12px;
         border: 1px solid var(--border);
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.6);
+        background: var(--panel-muted);
+        font-size: 0.88rem;
       }
 
       .status,
       .error {
-        margin-bottom: 18px;
-        padding: 14px 16px;
-        border-radius: 14px;
+        margin: 0;
+        padding: 12px 24px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.92rem;
       }
 
       .status {
-        border: 1px solid rgba(13, 107, 95, 0.18);
-        background: rgba(13, 107, 95, 0.08);
-        color: var(--accent-strong);
+        background: var(--panel-strong);
+        color: var(--muted);
       }
 
       .error {
         display: none;
-        border: 1px solid rgba(138, 51, 24, 0.18);
         background: var(--error-bg);
         color: var(--error-text);
         white-space: pre-wrap;
       }
 
       .preview {
-        padding: clamp(20px, 4vw, 40px);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        background: var(--panel-strong);
+        min-height: 0;
+        overflow: auto;
+        background: var(--panel);
       }
 
       .viewer-layout {
+        min-height: 100%;
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        gap: 20px;
-      }
-
-      .viewer-layout.has-explorer {
-        grid-template-columns: minmax(250px, 290px) minmax(0, 1fr);
-        gap: 24px;
         align-items: start;
       }
 
-      .explorer {
-        position: sticky;
-        top: 18px;
-        padding: 16px;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        background: rgba(247, 244, 237, 0.95);
+      .viewer-layout.has-sidebar {
+        grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
       }
 
-      .explorer h2 {
-        margin: 0 0 12px;
-        font-size: 0.95rem;
-        letter-spacing: 0.04em;
+      .viewer-layout.has-sidebar.is-sidebar-collapsed {
+        grid-template-columns: 72px minmax(0, 1fr);
+      }
+
+      .preview-nav {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        min-height: 100%;
+        padding: 20px 16px 24px 24px;
+        border-right: 1px solid var(--border);
+        background: var(--panel-strong);
+        display: grid;
+        gap: 12px;
+        align-content: start;
+      }
+
+      .preview-nav__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .preview-nav__title {
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .chrome-toggle,
+      .section-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 36px;
+        padding: 0 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #ffffff;
+        color: var(--text);
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .chrome-toggle:hover,
+      .section-toggle:hover {
+        background: var(--accent-soft);
+      }
+
+      .chrome-toggle__icon,
+      .section-toggle__icon {
+        font-size: 1rem;
+        line-height: 1;
+      }
+
+      .preview-nav.is-rail-collapsed {
+        padding-inline: 12px;
+      }
+
+      .preview-nav.is-rail-collapsed .preview-nav__title,
+      .preview-nav.is-rail-collapsed .nav-section {
+        display: none;
+      }
+
+      .preview-nav.is-rail-collapsed .preview-nav__header {
+        justify-content: center;
+      }
+
+      .preview-nav.is-rail-collapsed .chrome-toggle {
+        width: 48px;
+        padding: 0;
+      }
+
+      .preview-nav.is-rail-collapsed .chrome-toggle__label {
+        display: none;
+      }
+
+      .nav-section {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      .nav-section.is-empty {
+        display: none;
+      }
+
+      .nav-section__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .nav-section__title {
+        margin: 0;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .nav-section__body {
+        display: grid;
+        gap: 14px;
+        padding: 14px;
+      }
+
+      .nav-section.is-collapsed .nav-section__body {
+        display: none;
       }
 
       .explorer-meta {
-        margin: 0 0 14px;
+        margin: 0;
         color: var(--muted);
-        line-height: 1.45;
-        font-size: 0.92rem;
+        line-height: 1.55;
+        font-size: 0.9rem;
       }
 
       .explorer-meta a {
-        color: var(--accent-strong);
+        color: var(--text);
+        text-decoration: none;
+        border-bottom: 1px solid #bbbbbb;
       }
 
       .explorer-list {
@@ -204,35 +343,36 @@
         gap: 10px;
         align-items: center;
         padding: 10px 12px;
-        border: 1px solid var(--border);
+        border: 1px solid transparent;
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.72);
+        background: var(--panel-muted);
         color: var(--text);
         text-align: left;
         min-height: 0;
       }
 
       .explorer-link:hover {
-        background: rgba(255, 255, 255, 0.9);
+        background: #ededed;
       }
 
       .explorer-link.is-active {
-        border-color: rgba(13, 107, 95, 0.35);
-        background: rgba(13, 107, 95, 0.1);
+        border-color: #111111;
+        background: var(--accent-soft);
       }
 
       .explorer-kind {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 44px;
+        min-width: 42px;
         padding: 4px 8px;
+        border: 1px solid var(--border);
         border-radius: 999px;
-        background: rgba(13, 107, 95, 0.12);
-        color: var(--accent-strong);
-        font-size: 0.76rem;
+        background: #ffffff;
+        color: var(--muted);
+        font-size: 0.72rem;
         font-weight: 700;
-        letter-spacing: 0.03em;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
       }
 
@@ -242,7 +382,7 @@
       }
 
       .explorer-empty {
-        padding: 10px 0 0;
+        margin: 0;
         color: var(--muted);
         font-size: 0.92rem;
       }
@@ -250,33 +390,9 @@
       .preview-layout {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 0;
-        align-items: start;
-      }
-
-      .preview-nav {
-        position: sticky;
-        top: 18px;
-        display: grid;
-        gap: 16px;
-      }
-
-      .toc {
-        padding: 16px;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        background: rgba(247, 244, 237, 0.95);
-      }
-
-      .toc.is-empty {
-        display: none;
-      }
-
-      .toc h2 {
-        margin: 0 0 12px;
-        font-size: 0.95rem;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
+        min-width: 0;
+        min-height: 100%;
+        background: var(--panel);
       }
 
       .toc-list {
@@ -284,7 +400,7 @@
         margin: 0;
         padding: 0;
         display: grid;
-        gap: 6px;
+        gap: 4px;
       }
 
       .toc-item {
@@ -293,36 +409,41 @@
 
       .toc-link {
         display: block;
+        padding: 8px 10px;
+        border-radius: 10px;
         color: var(--muted);
         text-decoration: none;
         line-height: 1.35;
-        font-size: 0.95rem;
+        font-size: 0.94rem;
       }
 
-      .toc-link:hover {
-        color: var(--accent-strong);
+      .toc-link:hover,
+      .toc-link.is-active {
+        background: var(--accent-soft);
+        color: var(--text);
       }
 
       .toc-link.depth-2 {
-        padding-left: 12px;
+        padding-left: 22px;
       }
 
       .toc-link.depth-3 {
-        padding-left: 24px;
+        padding-left: 34px;
       }
 
       .toc-link.depth-4,
       .toc-link.depth-5,
       .toc-link.depth-6 {
-        padding-left: 36px;
+        padding-left: 46px;
       }
 
       .preview-body {
         min-width: 0;
+        padding: 32px clamp(18px, 4vw, 56px) 72px;
       }
 
       .reading-column {
-        width: min(100%, 860px);
+        width: min(100%, 900px);
         margin: 0 auto;
       }
 
@@ -332,6 +453,7 @@
       }
 
       .markdown-body {
+        font-family: var(--reading-font);
         font-size: 1.04rem;
         line-height: 1.82;
         word-break: break-word;
@@ -379,6 +501,9 @@
 
       .heading-anchor:hover {
         color: var(--accent-strong);
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.15em;
       }
 
       .markdown-body img {
@@ -390,7 +515,8 @@
         overflow-x: auto;
         padding: 14px 16px;
         border-radius: 14px;
-        background: #f4efe5;
+        border: 1px solid var(--border);
+        background: #f6f6f6;
       }
 
       .markdown-body code {
@@ -401,7 +527,7 @@
       .markdown-body blockquote {
         margin-left: 0;
         padding-left: 16px;
-        border-left: 4px solid rgba(13, 107, 95, 0.3);
+        border-left: 3px solid #111111;
         color: var(--muted);
       }
 
@@ -410,7 +536,7 @@
         padding: 16px;
         border: 1px solid var(--border);
         border-radius: 16px;
-        background: #f7f3ea;
+        background: #f7f7f7;
         overflow-x: auto;
         max-width: 100%;
       }
@@ -435,7 +561,7 @@
         padding: 16px;
         border: 1px solid var(--border);
         border-radius: 16px;
-        background: #f6f2ea;
+        background: #f7f7f7;
         overflow-x: auto;
         max-width: 100%;
       }
@@ -456,36 +582,61 @@
       }
 
       @media (max-width: 920px) {
-        .shell {
-          width: min(100% - 20px, 1120px);
-          margin: 12px auto;
+        .app-toolbar {
+          grid-template-columns: 1fr;
           padding: 16px;
         }
 
-        .viewer-layout.has-explorer {
+        .status,
+        .error {
+          padding-inline: 16px;
+        }
+
+        .viewer-layout.has-sidebar {
           grid-template-columns: 1fr;
         }
 
-        .explorer,
-        .preview-nav {
+        .viewer-layout.has-sidebar.is-sidebar-collapsed {
+          grid-template-columns: 1fr;
+        }
+
+        .preview-nav,
+        .preview-nav.is-rail-collapsed {
           position: static;
+          min-height: 0;
+          padding: 16px;
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .preview-nav.is-rail-collapsed .preview-nav__title {
+          display: inline;
+        }
+
+        .preview-nav.is-rail-collapsed .nav-section {
+          display: block;
+        }
+
+        .preview-layout {
+          min-height: 0;
         }
       }
 
       @media (max-width: 680px) {
-        .shell {
-          width: min(100% - 20px, 980px);
-          margin: 10px auto;
+        .app-toolbar {
           padding: 16px;
-          border-radius: 18px;
         }
 
         .form {
           grid-template-columns: 1fr;
         }
 
-        button {
+        .primary-button {
           width: 100%;
+        }
+
+        .preview-body {
+          padding: 24px 16px 48px;
         }
 
         .markdown-body {
@@ -496,26 +647,32 @@
   </head>
   <body>
     <main class="shell">
-      <h1>Markdown URL Viewer</h1>
-      <p class="intro">
-        Enter a public URL that returns Markdown text. This page will fetch it in the browser and render a preview.
-      </p>
+      <header class="app-toolbar">
+        <div class="app-toolbar__brand">
+          <h1>Markdown URL Viewer</h1>
+          <p class="intro">
+            Render public Markdown or GitHub directory Markdown in a full-window reading view.
+          </p>
+        </div>
 
-      <form id="viewer-form" class="form">
-        <input
-          id="url-input"
-          name="url"
-          type="url"
-          placeholder="https://example.com/file.md"
-          required
-        />
-        <button type="submit">Render Preview</button>
-      </form>
+        <div class="app-toolbar__controls">
+          <form id="viewer-form" class="form">
+            <input
+              id="url-input"
+              name="url"
+              type="url"
+              placeholder="https://example.com/file.md"
+              required
+            />
+            <button type="submit" class="primary-button">Render Preview</button>
+          </form>
 
-      <div class="meta">
-        <span class="chip">Query param: <code>?url=...</code></span>
-        <span class="chip">Target URL must allow browser CORS requests</span>
-      </div>
+          <div class="meta">
+            <span class="chip">Query param: <code>?url=...</code></span>
+            <span class="chip">Target URL must allow browser CORS requests</span>
+          </div>
+        </div>
+      </header>
 
       <section id="status" class="status">Waiting for a URL.</section>
       <section id="error" class="error"></section>
@@ -541,6 +698,12 @@
       let currentExplorerContext = null;
       let currentHasToc = false;
       let vizInstancePromise = null;
+      let currentPreviewBodyHtml = "";
+      let currentNavState = {
+        railCollapsed: false,
+        repositoryCollapsed: false,
+        contentsCollapsed: false
+      };
 
       marked.setOptions({
         gfm: true,
@@ -604,6 +767,55 @@
             );
           })
           .join("");
+      }
+
+      function getSectionToggleLabel(isCollapsed) {
+        return isCollapsed ? "Expand" : "Collapse";
+      }
+
+      function getSectionToggleIcon(isCollapsed) {
+        return isCollapsed ? "+" : "−";
+      }
+
+      function buildNavSectionHtml(title, target, bodyHtml, options) {
+        const isCollapsed = Boolean(options && options.collapsed);
+        const isEmpty = Boolean(options && options.empty);
+        const classes = ["nav-section"];
+
+        if (isCollapsed) {
+          classes.push("is-collapsed");
+        }
+
+        if (isEmpty) {
+          classes.push("is-empty");
+        }
+
+        return (
+          '<section class="' +
+          classes.join(" ") +
+          '">' +
+          '<div class="nav-section__header">' +
+          '<h2 class="nav-section__title">' +
+          escapeAttribute(title) +
+          "</h2>" +
+          '<button type="button" class="section-toggle" data-toggle-target="' +
+          escapeAttribute(target) +
+          '" aria-expanded="' +
+          String(!isCollapsed) +
+          '">' +
+          '<span class="section-toggle__label">' +
+          escapeAttribute(getSectionToggleLabel(isCollapsed)) +
+          "</span>" +
+          '<span class="section-toggle__icon" aria-hidden="true">' +
+          escapeAttribute(getSectionToggleIcon(isCollapsed)) +
+          "</span>" +
+          "</button>" +
+          "</div>" +
+          '<div class="nav-section__body">' +
+          bodyHtml +
+          "</div>" +
+          "</section>"
+        );
       }
 
       function isMarkdownFileName(name) {
@@ -717,9 +929,9 @@
               .join("")
           : '<li class="explorer-empty">This directory is empty.</li>';
 
-        return (
-          '<aside class="explorer">' +
-          "<h2>Repository</h2>" +
+        return buildNavSectionHtml(
+          "Repository",
+          "repository",
           '<p class="explorer-meta">' +
           '<a href="' +
           escapeAttribute(buildGitHubTreeUrl(context.owner, context.repo, context.ref, context.directoryPath)) +
@@ -734,33 +946,69 @@
           "</p>" +
           '<ol class="explorer-list">' +
           itemsHtml +
-          "</ol>" +
-          "</aside>"
+          "</ol>",
+          {
+            collapsed: currentNavState.repositoryCollapsed
+          }
         );
       }
 
       function renderPreviewShell(bodyHtml, tocItems, explorerContext) {
+        currentPreviewBodyHtml = bodyHtml;
         const tocHtml = buildTocHtml(tocItems);
         const explorerHtml = buildExplorerHtml(explorerContext);
         currentExplorerContext = explorerContext;
         currentHasToc = tocItems.length > 0;
-        const leftNavHtml = explorerContext || tocItems.length
-          ? '<aside class="preview-nav">' +
-            explorerHtml +
-            '<section class="toc' +
-            (tocItems.length ? "" : " is-empty") +
+        const hasSidebar = Boolean(explorerContext || tocItems.length);
+        const railClasses = ["preview-nav"];
+        const layoutClasses = ["viewer-layout"];
+
+        if (hasSidebar) {
+          layoutClasses.push("has-sidebar");
+        }
+
+        if (hasSidebar && currentNavState.railCollapsed) {
+          layoutClasses.push("is-sidebar-collapsed");
+          railClasses.push("is-rail-collapsed");
+        }
+
+        const contentsHtml = buildNavSectionHtml(
+          "Contents",
+          "contents",
+          tocItems.length
+            ? '<ol class="toc-list">' + tocHtml + "</ol>"
+            : '<p class="explorer-empty">No headings found in this document.</p>',
+          {
+            collapsed: currentNavState.contentsCollapsed,
+            empty: !tocItems.length
+          }
+        );
+
+        const leftNavHtml = hasSidebar
+          ? '<aside class="' +
+            railClasses.join(" ") +
             '">' +
-            "<h2>Contents</h2>" +
-            '<ol class="toc-list">' +
-            tocHtml +
-            "</ol>" +
-            "</section>" +
+            '<div class="preview-nav__header">' +
+            '<span class="preview-nav__title">Navigation</span>' +
+            '<button type="button" class="chrome-toggle" data-toggle-target="rail" aria-expanded="' +
+            String(!currentNavState.railCollapsed) +
+            '">' +
+            '<span class="chrome-toggle__label">' +
+            escapeAttribute(currentNavState.railCollapsed ? "Open" : "Collapse") +
+            "</span>" +
+            '<span class="chrome-toggle__icon" aria-hidden="true">' +
+            escapeAttribute(currentNavState.railCollapsed ? "→" : "←") +
+            "</span>" +
+            "</button>" +
+            "</div>" +
+            explorerHtml +
+            contentsHtml +
             "</aside>"
           : "";
 
         preview.innerHTML =
-          '<div class="viewer-layout' +
-          (explorerContext ? " has-explorer" : "") +
+          '<div class="' +
+          layoutClasses.join(" ") +
           '">' +
           leftNavHtml +
           '<div class="preview-layout">' +
@@ -769,6 +1017,44 @@
           "</div>" +
           "</div>" +
           "</div>";
+
+        wirePreviewChromeInteractions(explorerContext);
+      }
+
+      function rerenderPreviewShell() {
+        renderPreviewShell(currentPreviewBodyHtml, currentTocItems, currentExplorerContext);
+      }
+
+      function togglePreviewSection(target) {
+        if (target === "rail") {
+          currentNavState.railCollapsed = !currentNavState.railCollapsed;
+        } else if (target === "repository") {
+          currentNavState.repositoryCollapsed = !currentNavState.repositoryCollapsed;
+        } else if (target === "contents") {
+          currentNavState.contentsCollapsed = !currentNavState.contentsCollapsed;
+        } else {
+          return;
+        }
+
+        rerenderPreviewShell();
+      }
+
+      function wirePreviewChromeInteractions(explorerContext) {
+        if (!currentExplorerContext && !currentHasToc) {
+          return;
+        }
+
+        const toggles = preview.querySelectorAll("[data-toggle-target]");
+        toggles.forEach((toggle) => {
+          toggle.addEventListener("click", () => {
+            const target = toggle.getAttribute("data-toggle-target");
+            if (target) {
+              togglePreviewSection(target);
+            }
+          });
+        });
+
+        wireExplorerInteractions(explorerContext);
       }
 
       function syncUrlState(url, options) {
@@ -953,7 +1239,6 @@
         renderPreviewShell('<div class="markdown-body">' + safeHtml + "</div>", currentTocItems, explorerContext);
         await renderMermaidBlocks(preview);
         await renderGraphvizBlocks(preview);
-        wireExplorerInteractions(explorerContext);
       }
 
       function renderExplorerNotice(message, explorerContext) {
@@ -962,7 +1247,6 @@
           [],
           explorerContext
         );
-        wireExplorerInteractions(explorerContext);
       }
 
       function wireExplorerInteractions(explorerContext) {
