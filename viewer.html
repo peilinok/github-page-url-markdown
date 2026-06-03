@@ -146,49 +146,6 @@
         background: var(--panel-strong);
       }
 
-      .toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 18px;
-        padding: 12px 14px;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.62);
-      }
-
-      .toolbar-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-      }
-
-      .toolbar-note {
-        color: var(--muted);
-        font-size: 0.92rem;
-        line-height: 1.4;
-      }
-
-      .toggle-button {
-        min-height: 40px;
-        padding: 0 14px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.9);
-        color: var(--text);
-        font-size: 0.92rem;
-        font-weight: 600;
-      }
-
-      .toggle-button.is-active {
-        border-color: rgba(13, 107, 95, 0.35);
-        background: rgba(13, 107, 95, 0.12);
-        color: var(--accent-strong);
-      }
-
       .viewer-layout {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -196,7 +153,7 @@
       }
 
       .viewer-layout.has-explorer {
-        grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+        grid-template-columns: minmax(250px, 290px) minmax(0, 1fr);
         gap: 24px;
         align-items: start;
       }
@@ -208,11 +165,6 @@
         border: 1px solid var(--border);
         border-radius: 16px;
         background: rgba(247, 244, 237, 0.95);
-      }
-
-      .explorer.is-hidden,
-      .toc.is-hidden {
-        display: none;
       }
 
       .explorer h2 {
@@ -297,18 +249,19 @@
 
       .preview-layout {
         display: grid;
-        grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
-        gap: 24px;
+        grid-template-columns: 1fr;
+        gap: 0;
         align-items: start;
       }
 
-      .preview-layout.no-toc {
-        grid-template-columns: 1fr;
+      .preview-nav {
+        position: sticky;
+        top: 18px;
+        display: grid;
+        gap: 16px;
       }
 
       .toc {
-        position: sticky;
-        top: 18px;
         padding: 16px;
         border: 1px solid var(--border);
         border-radius: 16px;
@@ -513,12 +466,8 @@
           grid-template-columns: 1fr;
         }
 
-        .preview-layout {
-          grid-template-columns: 1fr;
-        }
-
         .explorer,
-        .toc {
+        .preview-nav {
           position: static;
         }
       }
@@ -537,18 +486,6 @@
 
         button {
           width: 100%;
-        }
-
-        .toolbar {
-          align-items: stretch;
-        }
-
-        .toolbar-group {
-          width: 100%;
-        }
-
-        .toggle-button {
-          flex: 1 1 140px;
         }
 
         .markdown-body {
@@ -582,14 +519,6 @@
 
       <section id="status" class="status">Waiting for a URL.</section>
       <section id="error" class="error"></section>
-      <section id="toolbar" class="toolbar" hidden>
-        <div class="toolbar-group">
-          <button id="toggle-explorer" class="toggle-button" type="button">Repository Panel</button>
-          <button id="toggle-toc" class="toggle-button" type="button">Contents Panel</button>
-          <button id="toggle-reading" class="toggle-button" type="button">Reading Mode</button>
-        </div>
-        <div id="toolbar-note" class="toolbar-note">Long documents read best with side panels collapsed.</div>
-      </section>
       <article id="preview" class="preview">
         <p class="placeholder">The rendered Markdown preview will appear here.</p>
       </article>
@@ -603,11 +532,6 @@
       const input = document.getElementById("url-input");
       const statusBox = document.getElementById("status");
       const errorBox = document.getElementById("error");
-      const toolbar = document.getElementById("toolbar");
-      const toolbarNote = document.getElementById("toolbar-note");
-      const toggleExplorerButton = document.getElementById("toggle-explorer");
-      const toggleTocButton = document.getElementById("toggle-toc");
-      const toggleReadingButton = document.getElementById("toggle-reading");
       const preview = document.getElementById("preview");
       const GITHUB_API_BASE = "https://api.github.com";
       const MARKDOWN_FILE_PATTERN = /\.(md|markdown|mdown|mkdn)$/i;
@@ -616,11 +540,6 @@
       let headingSlugCounts = new Map();
       let currentExplorerContext = null;
       let currentHasToc = false;
-      let layoutState = {
-        showExplorer: true,
-        showToc: true,
-        readingMode: false
-      };
       let vizInstancePromise = null;
 
       marked.setOptions({
@@ -685,75 +604,6 @@
             );
           })
           .join("");
-      }
-
-      function updateToolbarVisibility() {
-        const hasExplorer = !!currentExplorerContext;
-        const hasToc = currentHasToc;
-        const shouldShowToolbar = hasExplorer || hasToc;
-
-        toolbar.hidden = !shouldShowToolbar;
-        if (!shouldShowToolbar) {
-          return;
-        }
-
-        toggleExplorerButton.hidden = !hasExplorer;
-        toggleTocButton.hidden = !hasToc;
-
-        toggleExplorerButton.classList.toggle("is-active", hasExplorer && layoutState.showExplorer && !layoutState.readingMode);
-        toggleTocButton.classList.toggle("is-active", hasToc && layoutState.showToc && !layoutState.readingMode);
-        toggleReadingButton.classList.toggle("is-active", layoutState.readingMode);
-
-        const notes = [];
-        if (layoutState.readingMode) {
-          notes.push("Reading mode keeps the focus on the Markdown body.");
-        } else if (hasExplorer || hasToc) {
-          notes.push("Collapse side panels when the document gets dense.");
-        }
-
-        if (hasExplorer && hasToc) {
-          notes.push("Repository and contents panels can be toggled independently.");
-        } else if (hasExplorer) {
-          notes.push("Repository navigation is available when you need to switch files.");
-        } else if (hasToc) {
-          notes.push("Contents navigation is available for long documents.");
-        }
-
-        toolbarNote.textContent = notes.join(" ");
-      }
-
-      function applyLayoutState() {
-        const explorer = preview.querySelector(".explorer");
-        const toc = preview.querySelector(".toc");
-        const viewerLayout = preview.querySelector(".viewer-layout");
-        const previewLayout = preview.querySelector(".preview-layout");
-
-        if (explorer) {
-          const hideExplorer = layoutState.readingMode || !layoutState.showExplorer;
-          explorer.classList.toggle("is-hidden", hideExplorer);
-        }
-
-        if (toc) {
-          const hideToc = layoutState.readingMode || !layoutState.showToc || !currentHasToc;
-          toc.classList.toggle("is-hidden", hideToc);
-        }
-
-        if (viewerLayout) {
-          const hasExplorer = !!currentExplorerContext && !layoutState.readingMode && layoutState.showExplorer;
-          viewerLayout.classList.toggle("has-explorer", hasExplorer);
-        }
-
-        if (previewLayout) {
-          const hasVisibleToc = currentHasToc && !layoutState.readingMode && layoutState.showToc;
-          previewLayout.classList.toggle("no-toc", !hasVisibleToc);
-        }
-
-        updateToolbarVisibility();
-      }
-
-      function setReadingMode(nextValue) {
-        layoutState.readingMode = nextValue;
-        applyLayoutState();
       }
 
       function isMarkdownFileName(name) {
@@ -894,28 +744,31 @@
         const explorerHtml = buildExplorerHtml(explorerContext);
         currentExplorerContext = explorerContext;
         currentHasToc = tocItems.length > 0;
+        const leftNavHtml = explorerContext || tocItems.length
+          ? '<aside class="preview-nav">' +
+            explorerHtml +
+            '<section class="toc' +
+            (tocItems.length ? "" : " is-empty") +
+            '">' +
+            "<h2>Contents</h2>" +
+            '<ol class="toc-list">' +
+            tocHtml +
+            "</ol>" +
+            "</section>" +
+            "</aside>"
+          : "";
+
         preview.innerHTML =
           '<div class="viewer-layout' +
           (explorerContext ? " has-explorer" : "") +
           '">' +
-          explorerHtml +
-          '<div class="preview-layout' +
-          (tocItems.length ? "" : " no-toc") +
-          '">' +
-          '<aside class="toc' +
-          (tocItems.length ? "" : " is-empty") +
-          '">' +
-          "<h2>Contents</h2>" +
-          '<ol class="toc-list">' +
-          tocHtml +
-          "</ol>" +
-          "</aside>" +
+          leftNavHtml +
+          '<div class="preview-layout">' +
           '<div class="preview-body reading-column">' +
           bodyHtml +
           "</div>" +
           "</div>" +
           "</div>";
-        applyLayoutState();
       }
 
       function syncUrlState(url, options) {
@@ -1404,7 +1257,6 @@
         preview.appendChild(paragraph);
         currentExplorerContext = null;
         currentHasToc = false;
-        toolbar.hidden = true;
       }
 
       async function loadSource(sourceUrl) {
@@ -1469,26 +1321,6 @@
         }
 
         await loadSource(url);
-      });
-
-      toggleExplorerButton.addEventListener("click", () => {
-        layoutState.showExplorer = !layoutState.showExplorer;
-        if (layoutState.readingMode) {
-          layoutState.readingMode = false;
-        }
-        applyLayoutState();
-      });
-
-      toggleTocButton.addEventListener("click", () => {
-        layoutState.showToc = !layoutState.showToc;
-        if (layoutState.readingMode) {
-          layoutState.readingMode = false;
-        }
-        applyLayoutState();
-      });
-
-      toggleReadingButton.addEventListener("click", () => {
-        setReadingMode(!layoutState.readingMode);
       });
 
       const params = new URLSearchParams(window.location.search);
